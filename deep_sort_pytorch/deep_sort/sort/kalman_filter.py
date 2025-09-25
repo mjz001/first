@@ -43,14 +43,14 @@ class KalmanFilter(object):
         # Create Kalman filter model matrices.
         self._motion_mat = np.eye(2 * ndim, 2 * ndim)
         for i in range(ndim):
-            self._motion_mat[i, ndim + i] = dt
-        self._update_mat = np.eye(ndim, 2 * ndim)
+            self._motion_mat[i, ndim + i] = dt#状态转移矩阵，8*8，ndim+i代表各自的速度,dt=1是因为咱们一帧帧来做的
+        self._update_mat = np.eye(ndim, 2 * ndim) 
 
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in
         # the model. This is a bit hacky.
-        self._std_weight_position = 1. / 20
-        self._std_weight_velocity = 1. / 160
+        self._std_weight_position = 1. / 20 #位置的方差
+        self._std_weight_velocity = 1. / 160 #速度的方差
 
     def initiate(self, measurement):
         """Create track from unassociated measurement.
@@ -68,11 +68,11 @@ class KalmanFilter(object):
             dimensional) of the new track. Unobserved velocities are initialized
             to 0 mean.
 
-        """
+        """ #mean是位置信息，各个速度初始化为0；协方差是位置信息之间的关系
         mean_pos = measurement
         mean_vel = np.zeros_like(mean_pos)
         mean = np.r_[mean_pos, mean_vel]
-
+        #感觉这些变量都跟高度关系比较紧密？高度越小就越远，高度越大就越近？与其当前位置无关
         std = [
             2 * self._std_weight_position * measurement[3],
             2 * self._std_weight_position * measurement[3],
@@ -114,10 +114,10 @@ class KalmanFilter(object):
             self._std_weight_velocity * mean[3],
             1e-5,
             self._std_weight_velocity * mean[3]]
-        motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
+        motion_cov = np.diag(np.square(np.r_[std_pos, std_vel])) #初始化噪声矩阵Q
 
-        mean = np.dot(self._motion_mat, mean)
-        covariance = np.linalg.multi_dot((
+        mean = np.dot(self._motion_mat, mean) #x' = Fx 得到预测状态
+        covariance = np.linalg.multi_dot((    #p' = FPF^T + Q
             self._motion_mat, covariance, self._motion_mat.T)) + motion_cov
 
         return mean, covariance
@@ -138,16 +138,16 @@ class KalmanFilter(object):
             Returns the projected mean and covariance matrix of the given state
             estimate.
 
-        """
+        """#噪声的协方差
         std = [
             self._std_weight_position * mean[3],
             self._std_weight_position * mean[3],
             1e-1,
             self._std_weight_position * mean[3]]
-        innovation_cov = np.diag(np.square(std))
+        innovation_cov = np.diag(np.square(std))#初始化噪声矩阵
 
-        mean = np.dot(self._update_mat, mean)
-        covariance = np.linalg.multi_dot((
+        mean = np.dot(self._update_mat, mean)#Hx' 将均值向量映射到检测空间，由于测量矩阵H是一个4×8的单位矩阵，所以就相当于提取出了前面的4个位置向量[cx,cy,r,h]
+        covariance = np.linalg.multi_dot((   #HP'H^T 将协方差矩阵映射到检测空间
             self._update_mat, covariance, self._update_mat.T))
         return mean, covariance + innovation_cov
 
@@ -173,15 +173,15 @@ class KalmanFilter(object):
         """
         projected_mean, projected_cov = self.project(mean, covariance)
 
-        chol_factor, lower = scipy.linalg.cho_factor(
+        chol_factor, lower = scipy.linalg.cho_factor( #矩阵分解
             projected_cov, lower=True, check_finite=False)
-        kalman_gain = scipy.linalg.cho_solve(
+        kalman_gain = scipy.linalg.cho_solve( #计算卡尔曼增益
             (chol_factor, lower), np.dot(covariance, self._update_mat.T).T,
             check_finite=False).T
-        innovation = measurement - projected_mean
-
-        new_mean = mean + np.dot(innovation, kalman_gain.T)
-        new_covariance = covariance - np.linalg.multi_dot((
+        innovation = measurement - projected_mean #y=z-Hx',z为detection的均值向量，不包含速度变化值，
+        #z=[cx,cy,r,h],H称为测量矩阵，它将track的均值向量x'映射到检测空间，该公式计算detection和track的均值误差。
+        new_mean = mean + np.dot(innovation, kalman_gain.T) ##新的均值向量x=x'+Ky=x'+k(z-Hx')
+        new_covariance = covariance - np.linalg.multi_dot(( #新的协方差向量P=P'-KHK^T
             kalman_gain, projected_cov, kalman_gain.T))
         return new_mean, new_covariance
 

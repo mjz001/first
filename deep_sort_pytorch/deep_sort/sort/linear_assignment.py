@@ -55,9 +55,9 @@ def min_cost_matching(
 
     cost_matrix = distance_metric(
         tracks, detections, track_indices, detection_indices)
-    cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
+    cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5 #过滤
 
-    row_indices, col_indices = linear_assignment(cost_matrix)
+    row_indices, col_indices = linear_assignment(cost_matrix) #匹配
 
     matches, unmatched_tracks, unmatched_detections = [], [], []
     for col, detection_idx in enumerate(detection_indices):
@@ -115,7 +115,7 @@ def matching_cascade(
         * A list of unmatched track indices.
         * A list of unmatched detection indices.
 
-    """
+    """ #级联匹配：1.外观信息（128维度特征）2.运动信息（基于卡尔曼滤波预测的track的位置）
     if track_indices is None:
         track_indices = list(range(len(tracks)))
     if detection_indices is None:

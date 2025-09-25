@@ -26,10 +26,10 @@ class DeepSort(object):
     def update(self, bbox_xywh, confidences, ori_img):
         self.height, self.width = ori_img.shape[:2]
         # generate detections
-        features = self._get_features(bbox_xywh, ori_img)
+        features = self._get_features(bbox_xywh, ori_img) #获取当前bbox的特征
         bbox_tlwh = self._xywh_to_tlwh(bbox_xywh)
         detections = [Detection(bbox_tlwh[i], conf, features[i]) for i, conf in enumerate(
-            confidences) if conf > self.min_confidence]
+            confidences) if conf > self.min_confidence] #筛选，大于min_confidence的才保留并构造成Detection对象，存储其坐标，置信度，人的特征
 
         # run on non-maximum supression
         boxes = np.array([d.tlwh for d in detections])

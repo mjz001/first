@@ -80,7 +80,7 @@ class Tracker:
         for track_idx in unmatched_tracks:
             self.tracks[track_idx].mark_missed()
         for detection_idx in unmatched_detections:
-            self._initiate_track(detections[detection_idx])
+            self._initiate_track(detections[detection_idx]) #对未匹配的detection初始化
         self.tracks = [t for t in self.tracks if not t.is_deleted()]
 
         # Update distance metric.
@@ -119,8 +119,8 @@ class Tracker:
                 gated_metric, self.metric.matching_threshold, self.max_age,
                 self.tracks, detections, confirmed_tracks)
 
-        # Associate remaining tracks together with unconfirmed tracks using IOU.
-        iou_track_candidates = unconfirmed_tracks + [
+        # Associate remaining tracks together with unconfirmed tracks using IOU. IOU匹配（未确定的+没有普配上的）
+        iou_track_candidates = unconfirmed_tracks + [ 
             k for k in unmatched_tracks_a if
             self.tracks[k].time_since_update == 1]
         unmatched_tracks_a = [

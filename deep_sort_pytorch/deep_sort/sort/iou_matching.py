@@ -63,7 +63,7 @@ def iou_cost(tracks, detections, track_indices=None,
         len(track_indices), len(detection_indices) where entry (i, j) is
         `1 - iou(tracks[track_indices[i]], detections[detection_indices[j]])`.
 
-    """
+    """#计算track和detection之间的IOU距离
     if track_indices is None:
         track_indices = np.arange(len(tracks))
     if detection_indices is None:

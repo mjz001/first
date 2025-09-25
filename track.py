@@ -19,7 +19,7 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 
-
+#源码：https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 
@@ -247,6 +247,7 @@ def detect(opt):
             os.system('open ' + save_path)
 
     print('Done. (%.3fs)' % (time.time() - t0))
+
 
 
 if __name__ == '__main__':
